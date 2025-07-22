@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar App</title>
+    <style>
+        :root {
+            --header-bg: #4682B4;
+            --header-fg: white;
+            --nav-panel-bg: #6495ED;
+            --day-names-bg: #6495ED;
+            --day-names-fg: white;
+            --weekend-bg: #F0F8FF;
+            --note-day-bg: #98FB98;
+            --selected-day-bg: #FFD700;
+            --main-bg: #D3D3D3;
+            --button-bg: #4682B4;
+            --button-fg: white;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--main-bg);
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Login Screen */
+        #login-screen {
+            max-width: 350px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #login-screen h2 {
+            text-align: center;
+            color: var(--header-bg);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #login-btn {
+            background-color: var(--button-bg);
+            color: var(--button-fg);
+        }
+
+        #register-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        /* Calendar Screen */
+        #calendar-screen {
+            display: none;
+            flex: 1;
+        }
+
+        .nav-panel {
+            background-color: var(--nav-panel-bg);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .month-year-label {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--header-fg);
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-button {
+            background-color: var(--button-bg);
+            color: var(--button-fg);
+            border: 1px solid white;
+            padding: 5px 15px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .combo-panel {
+            display: flex;
+            gap: 10px;
+        }
+
+        select {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            padding: 15px;
+            background-color: var(--main-bg);
+        }
+
+        .day-name {
+            background-color: var(--day-names-bg);
+            color: var(--day-names-fg);
+            text-align: center;
+            padding: 8px 0;
+            font-weight: bold;
+            border: 1px solid white;
+        }
+
+        .day {
+            background-color: white;
+            border: 2px solid white;
+            text-align: center;
+            padding: 10px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .day:hover {
+            transform: scale(1.05);
+        }
+
+        .weekend {
+            background-color: var(--weekend-bg);
+            color: #4682B4;
+        }
+
+        .has-note {
+            background-color: var(--note-day-bg);
+        }
+
+        .selected {
+            background-color: var(--selected-day-bg);
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .notes-panel {
+            background-color: var(--main-bg);
+            padding: 15px;
+            border-top: 2px solid #ccc;
+        }
+
+        .notes-panel h3 {
+            margin-top: 0;
+        }
+
+        #notes-area {
+            width: 100%;
+            height: 100px;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: inherit;
+            margin-bottom: 10px;
+            background-color: white;
+        }
+
+        .notes-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .notes-button {
+            flex: 1;
+            padding: 8px;
+            background-color: var(--button-bg);
+            color: var(--button-fg);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .empty-day {
+            visibility: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .nav-panel {
+                flex-direction: column;
+            }
+            
+            .nav-buttons, .combo-panel {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .month-year-label {
+                order: -1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="login-screen">
+            <h2>Calendar Login</h2>
+            <div class="form-group">
+                <label for="username">Email:</label>
+                <input type="text" id="username" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            <div class="button-group">
+                <button id="login-btn">Login</button>
+                <button id="register-btn">Register</button>
+            </div>
+        </div>
+
+        <!-- Calendar Screen -->
+        <div id="calendar-screen">
+            <div class="nav-panel">
+                <div class="nav-buttons">
+                    <button class="nav-button" id="prev-month">&lt;</button>
+                    <button class="nav-button" id="today-btn">Today</button>
+                    <button class="nav-button" id="next-month">&gt;</button>
+                </div>
+                <div class="month-year-label" id="month-year-label"></div>
+                <div class="combo-panel">
+                    <select id="month-select"></select>
+                    <select id="year-select"></select>
+                </div>
+            </div>
+
+            <div class="calendar-grid" id="calendar-grid">
+                <!-- Day names and calendar days will be generated here -->
+            </div>
+
+            <div class="notes-panel">
+                <h3>Notes</h3>
+                <textarea id="notes-area" readonly></textarea>
+                <div class="notes-buttons">
+                    <button class="notes-button" id="add-note-btn">Add Note</button>
+                    <button class="notes-button" id="remove-note-btn">Remove Note</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class UserManager {
+            constructor() {
+                this.users = this.loadUsers();
+            }
+
+            loadUsers() {
+                const usersJson = localStorage.getItem('calendar_users');
+                return usersJson ? JSON.parse(usersJson) : {};
+            }
+
+            saveUsers() {
+                localStorage.setItem('calendar_users', JSON.stringify(this.users));
+            }
+
+            register(username, password) {
+                if (this.users[username]) {
+                    return false; // Username already exists
+                }
+                this.users[username] = { password };
+                this.saveUsers();
+                return true;
+            }
+
+            login(username, password) {
+                const user = this.users[username];
+                return user && user.password === password;
+            }
+        }
+
+        class CalendarApp {
+            constructor() {
+                this.userManager = new UserManager();
+                this.currentUser = null;
+                this.currentYear = new Date().getFullYear();
+                this.currentMonth = new Date().getMonth() + 1;
+                this.selectedDay = -1;
+                this.dayNotes = {};
+
+                this.setupEventListeners();
+                this.showLoginScreen();
+            }
+
+            setupEventListeners() {
+                // Login screen
+                document.getElementById('login-btn').addEventListener('click', () => this.handleLogin());
+                document.getElementById('register-btn').addEventListener('click', () => this.handleRegister());
+
+                // Calendar navigation
+                document.getElementById('prev-month').addEventListener('click', () => this.previousMonth());
+                document.getElementById('next-month').addEventListener('click', () => this.nextMonth());
+                document.getElementById('today-btn').addEventListener('click', () => this.goToToday());
+                document.getElementById('month-select').addEventListener('change', (e) => {
+                    this.currentMonth = e.target.selectedIndex + 1;
+                    this.updateCalendar();
+                });
+                document.getElementById('year-select').addEventListener('change', (e) => {
+                    this.currentYear = parseInt(e.target.value);
+                    this.updateCalendar();
+                });
+
+                // Notes
+                document.getElementById('add-note-btn').addEventListener('click', () => this.addNoteForSelectedDay());
+                document.getElementById('remove-note-btn').addEventListener('click', () => this.removeNoteForSelectedDay());
+            }
+
+            showLoginScreen() {
+                document.getElementById('login-screen').style.display = 'block';
+                document.getElementById('calendar-screen').style.display = 'none';
+            }
+
+            showCalendarScreen() {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('calendar-screen').style.display = 'block';
+                this.initializeCalendar();
+            }
+
+            handleLogin() {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                if (this.userManager.login(username, password)) {
+                    this.currentUser = username;
+                    this.showCalendarScreen();
+                } else {
+                    alert('Invalid credentials');
+                }
+            }
+
+            handleRegister() {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                if (!username || !password) {
+                    alert('Email and password required');
+                    return;
+                }
+
+                if (this.userManager.register(username, password)) {
+                    this.currentUser = username;
+                    this.showCalendarScreen();
+                } else {
+                    alert('Email already exists');
+                }
+            }
+
+            initializeCalendar() {
+                const today = new Date();
+                this.currentYear = today.getFullYear();
+                this.currentMonth = today.getMonth() + 1;
+                this.selectedDay = today.getDate();
+                this.dayNotes = {};
+
+                document.title = `Calendar - ${this.currentUser}`;
+                this.loadNotes();
+                this.populateMonthSelect();
+                this.populateYearSelect();
+                this.updateCalendar();
+                this.showDayNotes(this.selectedDay);
+            }
+
+            getUserNotesKey() {
+                return `calendar_notes_${this.currentUser}`;
+            }
+
+            loadNotes() {
+                const notesJson = localStorage.getItem(this.getUserNotesKey());
+                this.dayNotes = notesJson ? JSON.parse(notesJson) : {};
+            }
+
+            saveNotes() {
+                localStorage.setItem(this.getUserNotesKey(), JSON.stringify(this.dayNotes));
+            }
+
+            populateMonthSelect() {
+                const monthSelect = document.getElementById('month-select');
+                monthSelect.innerHTML = '';
+                const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+                
+                months.forEach((month, index) => {
+                    const option = document.createElement('option');
+                    option.value = index + 1;
+                    option.textContent = month;
+                    monthSelect.appendChild(option);
+                });
+                
+                monthSelect.selectedIndex = this.currentMonth - 1;
+            }
+
+            populateYearSelect() {
+                const yearSelect = document.getElementById('year-select');
+                yearSelect.innerHTML = '';
+                
+                const startYear = this.currentYear - 10;
+                const endYear = this.currentYear + 10;
+                
+                for (let year = startYear; year <= endYear; year++) {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    yearSelect.appendChild(option);
+                }
+                
+                yearSelect.value = this.currentYear;
+            }
+
+            updateCalendar() {
+                const calendarGrid = document.getElementById('calendar-grid');
+                calendarGrid.innerHTML = '';
+                
+                // Add day names
+                const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                dayNames.forEach(name => {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = 'day-name';
+                    dayElement.textContent = name;
+                    calendarGrid.appendChild(dayElement);
+                });
+                
+                const firstDay = new Date(this.currentYear, this.currentMonth - 1, 1);
+                const daysInMonth = new Date(this.currentYear, this.currentMonth, 0).getDate();
+                const startDay = (firstDay.getDay() + 6) % 7; // Convert to Monday=0, Sunday=6
+                
+                // Add empty cells for days before the first day of month
+                for (let i = 0; i < startDay; i++) {
+                    const emptyDay = document.createElement('div');
+                    emptyDay.className = 'empty-day';
+                    calendarGrid.appendChild(emptyDay);
+                }
+                
+                // Add day cells
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = 'day';
+                    dayElement.textContent = day;
+                    
+                    const key = `${this.currentYear}-${this.currentMonth}-${day}`;
+                    const isWeekend = this.isWeekend(day);
+                    const hasNotes = this.dayNotes[key] && this.dayNotes[key].length > 0;
+                    const isSelected = day === this.selectedDay;
+                    
+                    if (isWeekend) dayElement.classList.add('weekend');
+                    if (hasNotes) dayElement.classList.add('has-note');
+                    if (isSelected) dayElement.classList.add('selected');
+                    
+                    dayElement.addEventListener('click', () => {
+                        this.selectedDay = day;
+                        this.showDayNotes(day);
+                        this.updateCalendar();
+                    });
+                    
+                    calendarGrid.appendChild(dayElement);
+                }
+                
+                // Update month/year label
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                  'July', 'August', 'September', 'October', 'November', 'December'];
+                document.getElementById('month-year-label').textContent = 
+                    `${monthNames[this.currentMonth - 1]} ${this.currentYear}`;
+                
+                // Update select controls
+                document.getElementById('month-select').selectedIndex = this.currentMonth - 1;
+                document.getElementById('year-select').value = this.currentYear;
+            }
+
+            isWeekend(day) {
+                const date = new Date(this.currentYear, this.currentMonth - 1, day);
+                const dayOfWeek = date.getDay();
+                return dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+            }
+
+            showDayNotes(day) {
+                const notesArea = document.getElementById('notes-area');
+                const key = `${this.currentYear}-${this.currentMonth}-${day}`;
+                
+                if (this.dayNotes[key] && this.dayNotes[key].length > 0) {
+                    notesArea.value = `Notes for ${this.currentMonth}/${day}/${this.currentYear}:\n\n` +
+                        this.dayNotes[key].map(note => `• ${note}`).join('\n');
+                } else {
+                    notesArea.value = `No notes for ${this.currentMonth}/${day}/${this.currentYear}.`;
+                }
+            }
+
+            addNoteForSelectedDay() {
+                if (this.selectedDay === -1) {
+                    alert('Please select a day first!');
+                    return;
+                }
+                
+                const noteText = prompt(`Enter note for ${this.currentMonth}/${this.selectedDay}/${this.currentYear}:`);
+                
+                if (noteText && noteText.trim()) {
+                    const key = `${this.currentYear}-${this.currentMonth}-${this.selectedDay}`;
+                    if (!this.dayNotes[key]) this.dayNotes[key] = [];
+                    this.dayNotes[key].push(noteText);
+                    this.saveNotes();
+                    this.updateCalendar();
+                    this.showDayNotes(this.selectedDay);
+                }
+            }
+
+            removeNoteForSelectedDay() {
+                if (this.selectedDay === -1) {
+                    alert('Please select a day first!');
+                    return;
+                }
+                
+                const key = `${this.currentYear}-${this.currentMonth}-${this.selectedDay}`;
+                if (!this.dayNotes[key] || this.dayNotes[key].length === 0) {
+                    alert('No notes to remove for this day!');
+                    return;
+                }
+                
+                const notes = this.dayNotes[key];
+                
+                if (notes.length === 1) {
+                    if (confirm(`Remove this note?\n"${notes[0]}"`)) {
+                        notes.pop();
+                        this.saveNotes();
+                        this.updateCalendar();
+                        this.showDayNotes(this.selectedDay);
+                    }
+                } else {
+                    const selectedNote = prompt(`Enter the number of the note to remove (1-${notes.length}):\n` +
+                        notes.map((note, i) => `${i+1}. ${note}`).join('\n'));
+                    
+                    const noteIndex = parseInt(selectedNote) - 1;
+                    if (!isNaN(noteIndex) && noteIndex >= 0 && noteIndex < notes.length) {
+                        notes.splice(noteIndex, 1);
+                        this.saveNotes();
+                        this.updateCalendar();
+                        this.showDayNotes(this.selectedDay);
+                    }
+                }
+            }
+
+            previousMonth() {
+                if (this.currentMonth === 1) {
+                    this.currentMonth = 12;
+                    this.currentYear--;
+                } else {
+                    this.currentMonth--;
+                }
+                this.selectedDay = -1;
+            }
+
+            nextMonth() {
+                if (this.currentMonth === 12) {
+                    this.currentMonth = 1;
+                    this.currentYear++;
+                } else {
+                    this.currentMonth++;
+                }
+                this.selectedDay = -1;
+            }
+
+            goToToday() {
+                const today = new Date();
+                this.currentYear = today.getFullYear();
+                this.currentMonth = today.getMonth() + 1;
+                this.selectedDay = today.getDate();
+                this.updateCalendar();
+                this.showDayNotes(this.selectedDay);
+            }
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new CalendarApp();
+        });
+    </script>
+</body>
+</html>
